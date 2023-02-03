@@ -1,0 +1,57 @@
+version: "3.7"
+
+services:
+
+    # Imagem Micro 01
+    micro_01:
+        container_name: micro_01
+        image: laravel-app
+        restart: unless-stopped
+        build:
+            args:
+                user: gabri
+                uid: 1000
+            context: ./
+            dockerfile: Dockerfile
+        working_dir: /var/www/
+        volumes:
+            - ./:/var/www/
+        networks:
+            - microservices
+
+    # Imagem Nginx
+    nginx:
+        container_name: nginx
+        image: nginx:alpine
+        restart: unless-stopped
+        ports:
+            - "80:80"
+        #            - "443:443"
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/:/etc/nginx/conf.d
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        networks:
+            - microservices
+
+    # Imagem DB micro_01
+    micro01db:
+        container_name: micro01db
+        image: mysql:5.7.22
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_USER: ${DB_USERNAME}
+        volumes:
+            - ./.docker/mysql/dbdata:/var/lib/mysql
+        ports:
+            - 3308:3306
+        networks:
+            - microservices
+
+networks:
+    microservices:
+        driver: bridge
